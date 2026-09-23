@@ -14,6 +14,7 @@ from .beszel import BeszelClient
 from .calendar_info import beijing_calendar
 from .config import ConfigStore
 from .snmp import SnmpCollector, safe_sample
+from .terminal import TerminalClient, safe_terminal
 from .weather import WeatherClient, safe_weather
 
 
@@ -22,6 +23,7 @@ store = ConfigStore()
 beszel = BeszelClient()
 snmp = SnmpCollector()
 weather = WeatherClient()
+terminal = TerminalClient()
 sessions: dict[str, float] = {}
 app = FastAPI(title="Phone Performance Monitor", version="1.0.0", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -105,6 +107,15 @@ async def snmp_interfaces(x_admin_token: str | None = Header(default=None)):
         raise HTTPException(502, f"SNMP 发现失败：{exc}") from exc
 
 
+@app.post("/api/test/terminal")
+async def test_terminal(x_admin_token: str | None = Header(default=None)):
+    require_auth(x_admin_token)
+    result = await safe_terminal(terminal, store.load()["terminal"])
+    if result.get("status") != "up":
+        raise HTTPException(502, result.get("error") or "Ubuntu 日志命令执行失败")
+    return {"ok": True, "lines": len(result.get("lines", []))}
+
+
 @app.get("/api/snapshot")
 async def snapshot():
     config = store.load()
@@ -112,13 +123,15 @@ async def snapshot():
         beszel.snapshot(config["beszel"]),
         safe_sample(snmp, config["snmp"]),
         safe_weather(weather, config["weather"]),
+        safe_terminal(terminal, config["terminal"]),
         return_exceptions=True,
     )
     beszel_data = results[0] if not isinstance(results[0], Exception) else {"systems": [], "error": str(results[0])}
     snmp_data = results[1] if not isinstance(results[1], Exception) else {"status": "error", "error": str(results[1])}
     weather_data = results[2] if not isinstance(results[2], Exception) else {"status": "error", "error": str(results[2])}
+    terminal_data = results[3] if not isinstance(results[3], Exception) else {"status": "error", "error": str(results[3]), "lines": []}
     now = time.time()
-    return {"beszel": beszel_data, "wan": snmp_data, "weather": weather_data, "calendar": beijing_calendar(now), "display": config["display"], "server_time": now}
+    return {"beszel": beszel_data, "wan": snmp_data, "weather": weather_data, "terminal": terminal_data, "calendar": beijing_calendar(now), "display": config["display"], "server_time": now}
 
 
 @app.get("/api/events")
@@ -130,6 +143,7 @@ async def events(request: Request):
                 beszel.snapshot(config["beszel"]),
                 safe_sample(snmp, config["snmp"]),
                 safe_weather(weather, config["weather"]),
+                safe_terminal(terminal, config["terminal"]),
                 return_exceptions=True,
             )
             now = time.time()
@@ -137,6 +151,7 @@ async def events(request: Request):
                 "beszel": results[0] if not isinstance(results[0], Exception) else {"systems": [], "error": str(results[0])},
                 "wan": results[1] if not isinstance(results[1], Exception) else {"status": "error", "error": str(results[1])},
                 "weather": results[2] if not isinstance(results[2], Exception) else {"status": "error", "error": str(results[2])},
+                "terminal": results[3] if not isinstance(results[3], Exception) else {"status": "error", "error": str(results[3]), "lines": []},
                 "calendar": beijing_calendar(now),
                 "display": config["display"],
                 "server_time": now,

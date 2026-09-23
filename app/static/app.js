@@ -10,10 +10,10 @@
   var clockEpoch = Date.now();
   var clockReceivedAt = Date.now();
   var slots = [
-    { label: "UBCLOUD", detail: "Intel 14700K + NVIDIA 4070Super", aliases: ["ubcloud", "ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
-    { label: "MACCLOUD", detail: "Apple MacBook Pro M1 Pro 2021", aliases: ["maccloud", "mac", "macbook"], third: "temperature", thirdLabel: "温度" },
-    { label: "SYNCLOUD", detail: "Synology DS423+", aliases: ["syncloud", "nas", "synology"], third: "temperature", thirdLabel: "温度" },
-    { label: "PVECLOUD", detail: "Beelink EQ13 mini Intel N95", aliases: ["pvecloud", "pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
+    { key: "ubcloud", label: "UBCLOUD", color: "#6ba8ff", detail: "Intel 14700K + NVIDIA 4070Super", aliases: ["ubcloud", "ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
+    { key: "maccloud", label: "MACCLOUD", color: "#b58cff", detail: "Apple MacBook Pro M1 Pro 2021", aliases: ["maccloud", "mac", "macbook"], third: "temperature", thirdLabel: "温度" },
+    { key: "syncloud", label: "SYNCLOUD", color: "#65d89b", detail: "Synology DS423+", aliases: ["syncloud", "nas", "synology"], third: "temperature", thirdLabel: "温度" },
+    { key: "pvecloud", label: "PVECLOUD", color: "#f0b75a", detail: "Beelink EQ13 mini Intel N95", aliases: ["pvecloud", "pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
   ];
 
   function escapeHtml(value) {
@@ -26,14 +26,6 @@
   function percent(value) { return value == null ? "--" : Math.round(Number(value)) + "%"; }
   function temperature(value) { return value == null ? "--" : Math.round(Number(value)) + "°C"; }
   function pad(value) { return value < 10 ? "0" + value : String(value); }
-
-  function formatRate(value) {
-    value = Number(value) || 0;
-    if (value >= 1000000000) return (value / 1000000000).toFixed(2) + " Gbps";
-    if (value >= 1000000) return (value / 1000000).toFixed(1) + " Mbps";
-    if (value >= 1000) return (value / 1000).toFixed(0) + " Kbps";
-    return Math.round(value) + " bps";
-  }
 
   function fitStage() {
     var scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
@@ -128,43 +120,50 @@
     if (clock) clock.textContent = currentClock();
   }
 
-  function sumRates(systems) {
-    return systems.reduce(function (total, system) {
-      total.down += Number(system.network_down_bps) || 0;
-      total.up += Number(system.network_up_bps) || 0;
-      return total;
-    }, { down: 0, up: 0 });
-  }
-
-  function rememberNetwork(data, systems) {
+  function rememberNetwork(data, matched) {
     var timestamp = Number(data.server_time) || Date.now() / 1000;
     if (timestamp === lastHistoryTime) return;
     lastHistoryTime = timestamp;
     var wan = data.wan || {};
-    var devices = sumRates(systems);
+    var devices = {};
+    slots.forEach(function (slot, index) {
+      var system = matched[index] || {};
+      devices[slot.key + "_down"] = Number(system.network_down_bps) || 0;
+      devices[slot.key + "_up"] = Number(system.network_up_bps) || 0;
+    });
     history.router.push({ down: Number(wan.download_bps) || 0, up: Number(wan.upload_bps) || 0 });
     history.devices.push(devices);
     if (history.router.length > historyLimit) history.router.shift();
     if (history.devices.length > historyLimit) history.devices.shift();
   }
 
-  function chartCard(id, title, subtitle, rates) {
-    return '<section class="chart-card"><div class="chart-title"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle) + '</span></div>' +
-      '<div class="chart-values"><div><span>↓ 下载</span><strong class="download-value">' + formatRate(rates.down) + '</strong></div>' +
-      '<div><span>↑ 上传</span><strong class="upload-value">' + formatRate(rates.up) + '</strong></div></div>' +
-      '<canvas id="' + id + '" class="throughput-chart" width="424" height="350"></canvas>' +
-      '<div class="chart-legend"><span class="download-legend"><i></i>下载</span><span class="upload-legend"><i></i>上传</span><em>最近 60 个采样点</em></div></section>';
+  function terminalPanel(terminal) {
+    terminal = terminal || {};
+    var status = terminal.status === "up" ? "实时" : terminal.status === "error" ? "连接失败" : "未配置";
+    var lines = terminal.lines || [];
+    var output = lines.length ? lines.join("\n") : (terminal.error || "请在设置页配置 Ubuntu SSH 与日志读取命令");
+    return '<section class="terminal-panel"><header><strong>Ubuntu 训练终端</strong><span class="terminal-state ' + escapeHtml(terminal.status || "disabled") + '"><i></i>' + status + '</span></header>' +
+      '<pre id="ubuntu-terminal-output">' + escapeHtml(output) + '</pre></section>';
   }
 
-  function networkCharts(data, systems, connectionState) {
-    var wan = data.wan || {};
-    var deviceRates = sumRates(systems);
-    var routerRates = { down: Number(wan.download_bps) || 0, up: Number(wan.upload_bps) || 0 };
-    return '<section class="network-panel"><div class="network-heading"><div><strong>实时网络吞吐</strong><span>下载与上传速度趋势</span></div>' +
-      '<div class="stream-state ' + connectionState + '"><i></i><span>' + (connectionState === "live" ? "数据流已连接" : "正在连接") + '</span></div></div>' +
-      '<div class="network-charts">' +
-        chartCard("router-chart", "路由器", "爱快 WAN 总吞吐", routerRates) +
-        chartCard("devices-chart", "全部设备", "Beszel 设备合计吞吐", deviceRates) +
+  function lineLegend(color, label, dashed) {
+    return '<span><i class="line-key ' + (dashed ? "dashed" : "solid") + '" style="border-color:' + color + '"></i>' + escapeHtml(label) + '</span>';
+  }
+
+  function chartCard(id, title, legend) {
+    return '<section class="chart-card"><div class="chart-title"><strong>' + escapeHtml(title) + '</strong></div>' +
+      '<canvas id="' + id + '" class="throughput-chart" width="454" height="240"></canvas>' +
+      '<div class="chart-legend">' + legend + '</div></section>';
+  }
+
+  function networkCharts() {
+    var routerLegend = '<div class="legend-row legend-directions">' + lineLegend("#7fb8ff", "下载", false) + lineLegend("#7fb8ff", "上传", true) + '</div>';
+    var deviceLegend = '<div class="legend-row legend-devices">' + slots.map(function (slot) {
+      return lineLegend(slot.color, slot.label, false);
+    }).join("") + '</div><div class="legend-row legend-directions">' + lineLegend("#aaa", "下载", false) + lineLegend("#aaa", "上传", true) + '</div>';
+    return '<section class="network-panel"><div class="network-charts">' +
+      chartCard("router-chart", "路由器曲线图", routerLegend) +
+      chartCard("devices-chart", "设备下载", deviceLegend) +
       '</div></section>';
   }
 
@@ -176,19 +175,29 @@
     return nice * power;
   }
 
-  function drawChart(canvas, points) {
+  function axisNumber(value) {
+    if (value >= 1000000000) return (value / 1000000000).toFixed(value >= 10000000000 ? 0 : 1).replace(/\.0$/, "") + "G";
+    if (value >= 1000000) return (value / 1000000).toFixed(value >= 10000000 ? 0 : 1).replace(/\.0$/, "") + "M";
+    if (value >= 1000) return (value / 1000).toFixed(value >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K";
+    return String(Math.round(value));
+  }
+
+  function drawChart(canvas, points, definitions) {
     if (!canvas || !canvas.getContext) return;
     var context = canvas.getContext("2d");
     var width = canvas.width;
     var height = canvas.height;
-    var left = 70;
-    var right = 18;
-    var top = 26;
-    var bottom = 42;
+    var left = 62;
+    var right = 14;
+    var top = 16;
+    var bottom = 18;
     var plotWidth = width - left - right;
     var plotHeight = height - top - bottom;
     var maximum = niceMaximum(points.reduce(function (highest, point) {
-      return Math.max(highest, point.down, point.up);
+      definitions.forEach(function (definition) {
+        highest = Math.max(highest, Number(point[definition.field]) || 0);
+      });
+      return highest;
     }, 0));
 
     context.clearRect(0, 0, width, height);
@@ -204,27 +213,28 @@
       context.lineTo(width - right, y);
       context.stroke();
       context.fillStyle = "#888";
-      context.fillText(formatRate(maximum * (4 - line) / 4), left - 10, y);
+      context.fillText(axisNumber(maximum * (4 - line) / 4), left - 9, y);
     }
 
-    function series(field, color) {
+    function series(definition) {
       if (!points.length) return;
       context.beginPath();
-      context.strokeStyle = color;
-      context.lineWidth = 4;
+      context.strokeStyle = definition.color;
+      context.lineWidth = 3;
+      context.setLineDash(definition.dashed ? [10, 8] : []);
       context.lineJoin = "round";
       context.lineCap = "round";
       points.forEach(function (point, index) {
         var x = points.length === 1 ? left : left + plotWidth * index / (points.length - 1);
-        var y = top + plotHeight * (1 - Math.min(Number(point[field]) || 0, maximum) / maximum);
+        var y = top + plotHeight * (1 - Math.min(Number(point[definition.field]) || 0, maximum) / maximum);
         if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
       });
-      if (points.length === 1) context.lineTo(width - right, top + plotHeight * (1 - Math.min(Number(points[0][field]) || 0, maximum) / maximum));
+      if (points.length === 1) context.lineTo(width - right, top + plotHeight * (1 - Math.min(Number(points[0][definition.field]) || 0, maximum) / maximum));
       context.stroke();
     }
 
-    series("down", "#6ba8ff");
-    series("up", "#65d89b");
+    definitions.forEach(series);
+    context.setLineDash([]);
   }
 
   function render(data, connectionState) {
@@ -234,18 +244,28 @@
       clockReceivedAt = Date.now();
     }
     var systems = (data.beszel && data.beszel.systems) || [];
-    rememberNetwork(data, systems);
     var used = {};
     var matched = slots.map(function (slot) {
       var system = findSystem(slot, systems, used);
       if (system) used[system.id] = true;
       return system || null;
     });
+    rememberNetwork(data, matched);
     dashboard.innerHTML = timePanel(data) + deviceCard(slots[0], matched[0], 1) + deviceCard(slots[1], matched[1], 2) +
       deviceCard(slots[2], matched[2], 3) + deviceCard(slots[3], matched[3], 4) +
-      networkCharts(data, systems, connectionState || "waiting");
-    drawChart(document.getElementById("router-chart"), history.router);
-    drawChart(document.getElementById("devices-chart"), history.devices);
+      terminalPanel(data.terminal) + networkCharts();
+    var output = document.getElementById("ubuntu-terminal-output");
+    if (output) output.scrollTop = output.scrollHeight;
+    drawChart(document.getElementById("router-chart"), history.router, [
+      { field: "down", color: "#7fb8ff", dashed: false },
+      { field: "up", color: "#7fb8ff", dashed: true }
+    ]);
+    var deviceDefinitions = [];
+    slots.forEach(function (slot) {
+      deviceDefinitions.push({ field: slot.key + "_down", color: slot.color, dashed: false });
+      deviceDefinitions.push({ field: slot.key + "_up", color: slot.color, dashed: true });
+    });
+    drawChart(document.getElementById("devices-chart"), history.devices, deviceDefinitions);
   }
 
   function connect() {

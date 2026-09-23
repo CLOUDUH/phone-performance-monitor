@@ -40,6 +40,22 @@
         <p class="muted">默认显示北京天气。修改经纬度后可显示其他城市，数据来自 Open-Meteo。</p>
       </section>
       <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">UBUNTU LOG</span><h2>Ubuntu 训练输出</h2></div><label class="switch"><input name="terminal.enabled" type="checkbox"><span>启用</span></label></div>
+        <div class="row"><div class="field grow"><label>SSH 地址</label><input name="terminal.host" placeholder="192.168.1.83"></div><div class="field small"><label>端口</label><input name="terminal.port" type="number" min="1" max="65535"></div></div>
+        <div class="field"><label>SSH 用户名</label><input name="terminal.username" autocomplete="username"></div>
+        <div class="field"><label>SSH 密码</label><input name="terminal.password" type="password" autocomplete="new-password" placeholder="留空则保持不变"></div>
+        <details><summary>SSH 密钥与主机校验</summary>
+          <div class="field"><label>OpenSSH 私钥</label><textarea name="terminal.private_key" rows="5" placeholder="留空则保持不变"></textarea></div>
+          <div class="field"><label>私钥口令</label><input name="terminal.key_passphrase" type="password" placeholder="留空则保持不变"></div>
+          <label class="switch"><input name="terminal.verify_host_key" type="checkbox"><span>校验 SSH 主机密钥</span></label>
+          <div class="field"><label>known_hosts 内容</label><textarea name="terminal.known_hosts" rows="3" placeholder="ssh-keyscan -H 192.168.1.83 的输出"></textarea></div>
+        </details>
+        <div class="field"><label>日志读取命令（每次必须在超时前结束）</label><textarea name="terminal.command" rows="3"></textarea></div>
+        <div class="row"><div class="field"><label>最多显示行数</label><input name="terminal.max_lines" type="number" min="20" max="200"></div><div class="field"><label>命令超时（秒）</label><input name="terminal.timeout_seconds" type="number" min="2" max="15"></div></div>
+        <p class="muted">systemd 示例：<code>journalctl -n 80 -u training.service --no-pager -o cat</code>。终端直接启动时先用 <code>python train.py 2&gt;&amp;1 | tee -a ~/training.log</code>，这里填写 <code>tail -n 80 ~/training.log</code>。</p>
+        <button type="button" id="test-terminal" class="button ghost">测试 Ubuntu 输出</button>
+      </section>
+      <section class="panel">
         <span class="eyebrow">SECURITY</span><h2>管理保护</h2>
         <div class="field"><label>设置或更换管理 PIN</label><input name="admin_pin" type="password" inputmode="numeric" minlength="4" placeholder="留空则保持不变"></div>
         <p class="muted">仪表盘默认仅适合可信局域网。密码和 SNMP 团体名只保存在 Docker 数据卷，不会返回给浏览器。</p>
@@ -47,6 +63,6 @@
       <div class="savebar"><span id="save-result" class="result"></span><button class="button primary" type="submit">保存全部设置</button></div>
     </form>
   </main>
-  <script src="/static/settings.js?v=weather-1" defer></script>
+  <script src="/static/settings.js?v=terminal-1" defer></script>
 </body>
 </html>

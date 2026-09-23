@@ -31,6 +31,30 @@ docker compose up -d --build
 
 Beszel agent 的常规状态数据本身约按分钟更新；页面与 WAN SNMP 数据流保持长连接，SNMP 可按 1–2 秒采样。若需要 Beszel 主机指标真正达到 1 秒粒度，需额外实现 PocketBase `rt_metrics` 实时订阅，本版本未伪称分钟数据为秒级数据。
 
+## Ubuntu 训练输出
+
+设置页可以配置 Ubuntu SSH 地址、用户名以及密码或 OpenSSH 私钥。监控服务每次执行一个应快速结束的只读日志命令，并将最近输出显示在首页终端区。建议为此单独创建低权限 SSH 用户。
+
+systemd 服务可直接读取 journal，例如同时查看两个训练服务：
+
+```bash
+journalctl -n 80 -u training-a.service -u training-b.service --no-pager -o cat
+```
+
+从普通终端直接启动的进程无法被另一个容器事后可靠截获 stdout。启动训练时应同步写入日志文件：
+
+```bash
+python -u train.py 2>&1 | tee -a ~/training.log
+```
+
+设置页中的读取命令填写：
+
+```bash
+tail -n 80 ~/training.log
+```
+
+`-u` 用于关闭 Python stdout 缓冲，使训练输出及时写入文件。不要在设置中使用 `tail -F` 或 `journalctl -f`，因为读取命令需要在配置的超时前结束；页面默认约每 2 秒重新读取一次。SSH 密码、私钥和私钥口令只保存在 Docker 数据卷中，配置 API 只返回“是否已设置”，不会把原文返回浏览器。
+
 ## 爱快 SNMP 设置
 
 在爱快管理界面启用 SNMP v2c，并把访问来源限制为运行本容器的主机 IP。设置页中填写：
@@ -48,11 +72,13 @@ Beszel agent 的常规状态数据本身约按分钟更新；页面与 WAN SNMP 
 
 ## 固定仪表盘布局
 
-首页没有标题栏和设置按钮，顶部显示北京时间、日期及天气，下面固定划分为三行两列：
+首页没有标题栏和设置按钮，顶部显示北京时间、日期及天气，下面依次显示：
 
 - 第一行：UBCLOUD（CPU、内存、GPU、系统负载），MACCLOUD（CPU、内存、温度、系统负载）。
 - 第二行：SYNCLOUD（CPU、内存、温度、系统负载），PVECLOUD（CPU、内存、温度、系统负载）。
-- 第三行：并排展示爱快路由器总吞吐和全部 Beszel 设备合计吞吐的上传、下载折线图。
+- 第三行：Ubuntu 训练终端，显示 SSH 日志命令的最新输出。
+- 第四行左侧：爱快路由器上传、下载曲线；SNMP 未配置时保持缺省状态。
+- 第四行右侧：四台设备各自的网络曲线。同一设备固定使用同一种颜色，下载为实线，上传为虚线。
 
 设备按 Beszel 名称自动匹配，兼容新旧名称及 `Ubuntu`、`MacBook`、`NAS/Synology`、`PVE/Proxmox` 别名。设置页不在首页显示，可直接访问 `/settings`。
 
@@ -61,7 +87,7 @@ Beszel agent 的常规状态数据本身约按分钟更新；页面与 WAN SNMP 
 ## 运维与安全边界
 
 - 项目定位是可信局域网看板，不应直接映射到公网。
-- HTTP 下管理 PIN 和数据未加密；跨不可信网络请在前面放置 HTTPS 反向代理。
+- HTTP 下管理 PIN、监控数据及终端输出未加密；跨不可信网络请在前面放置 HTTPS 反向代理。
 - 配置文件权限设为 `0600`，但目前是明文持久化；保护好 `data` 卷和主机备份。
 - 容器以非 root 用户运行、丢弃全部 Linux capabilities，并启用 `no-new-privileges`。
 

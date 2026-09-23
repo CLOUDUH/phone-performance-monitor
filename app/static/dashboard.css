@@ -62,14 +62,20 @@
 }
 
 .device-panel,
-.network-panel {
-  position: absolute;
+.terminal-panel,
+.chart-card {
   min-width: 0;
   overflow: hidden;
   border: 1px solid #414141;
   border-radius: 22px;
   background: #202020;
   box-shadow: 0 8px 24px rgba(0, 0, 0, .38);
+}
+
+.device-panel,
+.terminal-panel,
+.network-panel {
+  position: absolute;
 }
 
 .device-panel {
@@ -193,69 +199,88 @@
   transition: width .35s ease, background-color .35s ease;
 }
 
-.network-panel {
+.terminal-panel {
   left: 32px;
   top: 1128px;
   width: 1016px;
-  height: 768px;
-  padding: 32px;
+  height: 330px;
+  padding: 22px 26px;
 }
 
-.network-heading {
-  height: 80px;
+.terminal-panel header {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
   -webkit-box-pack: justify;
   -webkit-justify-content: space-between;
   justify-content: space-between;
-  -webkit-box-align: start;
-  -webkit-align-items: flex-start;
-  align-items: flex-start;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
 }
 
-.network-heading strong {
-  display: block;
+.terminal-panel header strong {
   color: #fff;
-  font-size: 31px;
+  font-size: 30px;
   line-height: 1;
 }
 
-.network-heading > div > span {
-  display: block;
-  margin-top: 9px;
-  color: #999;
-  font-size: 18px;
-}
-
-.stream-state {
+.terminal-state {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
   -webkit-box-align: center;
   -webkit-align-items: center;
   align-items: center;
-  color: #b4b4b4;
+  color: #aaa;
   font-size: 16px;
 }
 
-.stream-state.live { color: #78dcae; }
+.terminal-state i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.terminal-state.up { color: #65d89b; }
+.terminal-state.error { color: #ee6f78; }
+
+.terminal-panel pre {
+  width: 100%;
+  height: 238px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  overflow: auto;
+  border: 1px solid #3b3b3b;
+  border-radius: 14px;
+  background: #151515;
+  color: #d7d7d7;
+  font: 20px/1.34 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.network-panel {
+  left: 32px;
+  top: 1482px;
+  width: 1016px;
+  height: 414px;
+}
 
 .network-charts {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
-  width: 952px;
+  width: 1016px;
 }
 
 .chart-card {
-  width: 464px;
-  height: 622px;
+  width: 496px;
+  height: 414px;
   padding: 20px;
-  overflow: hidden;
-  border: 1px solid #454545;
-  border-radius: 18px;
-  background: #282828;
 }
 
 .chart-card + .chart-card { margin-left: 24px; }
@@ -267,52 +292,45 @@
   line-height: 1;
 }
 
-.chart-title span {
-  display: block;
-  margin-top: 8px;
-  color: #999;
-  font-size: 18px;
-}
-
-.chart-values {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  margin: 20px 0 14px;
-}
-
-.chart-values > div { width: 50%; }
-.chart-values > div + div { text-align: right; }
-.chart-values span { display: block; color: #999; font-size: 17px; }
-
-.chart-values strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 25px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.download-value { color: #6ba8ff; }
-.upload-value { color: #65d89b; }
-
 .throughput-chart {
   display: block;
-  width: 424px;
-  height: 350px;
+  width: 454px;
+  height: 240px;
+  margin-top: 9px;
 }
 
 .chart-legend {
-  height: 30px;
-  margin-top: 14px;
+  height: 82px;
+  margin-top: 8px;
   color: #aaa;
-  font-size: 16px;
-  line-height: 20px;
-  white-space: nowrap;
+  font-size: 14px;
+  line-height: 18px;
 }
 
-.chart-legend span { margin-right: 18px; }
-.chart-legend i { display: inline-block; width: 20px; height: 4px; margin-right: 6px; vertical-align: middle; border-radius: 4px; }
-.download-legend i { background: #6ba8ff; }
-.upload-legend i { background: #65d89b; }
-.chart-legend em { float: right; color: #7e7e7e; font-style: normal; }
+.legend-row {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  min-height: 22px;
+}
+
+.legend-row + .legend-row { margin-top: 4px; }
+.legend-row span { margin-right: 16px; white-space: nowrap; }
+.legend-devices span { margin-right: 12px; }
+
+.line-key {
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-top-width: 3px;
+}
+
+.line-key.solid { border-top-style: solid; }
+.line-key.dashed { border-top-style: dashed; }

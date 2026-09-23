@@ -36,6 +36,20 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "longitude": 116.4074,
         "refresh_minutes": 30,
     },
+    "terminal": {
+        "enabled": False,
+        "host": "",
+        "port": 22,
+        "username": "",
+        "password": "",
+        "private_key": "",
+        "key_passphrase": "",
+        "verify_host_key": False,
+        "known_hosts": "",
+        "command": "journalctl -n 80 -u training.service --no-pager -o cat",
+        "max_lines": 80,
+        "timeout_seconds": 5,
+    },
     "display": {
         "title": "局域网性能监控",
         "orientation": "auto",
@@ -82,18 +96,23 @@ class ConfigStore:
         data["beszel"]["password_set"] = bool(self.load()["beszel"].get("password"))
         data["snmp"]["community"] = ""
         data["snmp"]["community_set"] = bool(self.load()["snmp"].get("community"))
+        stored_terminal = self.load()["terminal"]
+        for key in ("password", "private_key", "key_passphrase"):
+            data["terminal"][key] = ""
+            data["terminal"][f"{key}_set"] = bool(stored_terminal.get(key))
         data["security"] = {"pin_set": bool(data["security"].get("pin_hash"))}
         return data
 
     def update(self, incoming: dict[str, Any]) -> dict[str, Any]:
         data = self.load()
-        for section in ("beszel", "snmp", "weather", "display"):
+        secret_fields = {"password", "community", "private_key", "key_passphrase"}
+        for section in ("beszel", "snmp", "weather", "terminal", "display"):
             values = incoming.get(section)
             if not isinstance(values, dict):
                 continue
             allowed = set(DEFAULT_CONFIG[section])
             for key, value in values.items():
-                if key in allowed and not (key in {"password", "community"} and value == ""):
+                if key in allowed and not (key in secret_fields and value == ""):
                     data[section][key] = value
         pin = incoming.get("admin_pin")
         if isinstance(pin, str) and pin:
