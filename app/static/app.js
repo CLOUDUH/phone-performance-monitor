@@ -111,8 +111,8 @@
 
   function weatherLine(weather) {
     if (!weather || (weather.status !== "up" && weather.status !== "stale")) return "天气数据暂不可用";
-    return Math.round(Number(weather.minimum)) + "–" + Math.round(Number(weather.maximum)) + "摄氏度  " +
-      escapeHtml(weather.condition || "天气未知") + "  降雨" + Math.round(Number(weather.precipitation_probability) || 0) + "%概率";
+    return Math.round(Number(weather.minimum)) + "–" + Math.round(Number(weather.maximum)) + "°C  " +
+      escapeHtml(weather.condition || "天气未知") + "  降雨" + Math.round(Number(weather.precipitation_probability) || 0) + "%";
   }
 
   function timePanel(data) {
@@ -152,7 +152,7 @@
     return '<section class="chart-card"><div class="chart-title"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle) + '</span></div>' +
       '<div class="chart-values"><div><span>↓ 下载</span><strong class="download-value">' + formatRate(rates.down) + '</strong></div>' +
       '<div><span>↑ 上传</span><strong class="upload-value">' + formatRate(rates.up) + '</strong></div></div>' +
-      '<canvas id="' + id + '" class="throughput-chart" width="424" height="620"></canvas>' +
+      '<canvas id="' + id + '" class="throughput-chart" width="424" height="350"></canvas>' +
       '<div class="chart-legend"><span class="download-legend"><i></i>下载</span><span class="upload-legend"><i></i>上传</span><em>最近 60 个采样点</em></div></section>';
   }
 
@@ -192,7 +192,7 @@
     }, 0));
 
     context.clearRect(0, 0, width, height);
-    context.font = "16px sans-serif";
+    context.font = "17px sans-serif";
     context.textAlign = "right";
     context.textBaseline = "middle";
     for (var line = 0; line <= 4; line += 1) {

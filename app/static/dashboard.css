@@ -31,7 +31,7 @@
   left: 32px;
   top: 24px;
   width: 1016px;
-  height: 145px;
+  height: 252px;
   text-align: center;
   color: #fff;
 }
@@ -43,21 +43,21 @@
 }
 
 .time-panel strong {
-  font-size: 52px;
+  font-size: 104px;
   line-height: 1;
   letter-spacing: .025em;
 }
 
 .time-panel span {
-  margin-top: 10px;
-  font-size: 22px;
+  margin-top: 16px;
+  font-size: 44px;
   line-height: 1.15;
   color: #bcbcbc;
 }
 
 .time-panel span + span {
-  margin-top: 8px;
-  font-size: 21px;
+  margin-top: 12px;
+  font-size: 42px;
   color: #a8a8a8;
 }
 
@@ -74,14 +74,14 @@
 
 .device-panel {
   width: 496px;
-  height: 315px;
+  height: 390px;
   padding: 24px 26px;
 }
 
-.device-1 { left: 32px; top: 193px; }
-.device-2 { left: 552px; top: 193px; }
-.device-3 { left: 32px; top: 532px; }
-.device-4 { left: 552px; top: 532px; }
+.device-1 { left: 32px; top: 300px; }
+.device-2 { left: 552px; top: 300px; }
+.device-3 { left: 32px; top: 714px; }
+.device-4 { left: 552px; top: 714px; }
 
 .device-header {
   display: -webkit-box;
@@ -96,7 +96,7 @@
 }
 
 .device-label {
-  font-size: 34px;
+  font-size: 35px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: -.035em;
@@ -107,7 +107,7 @@
   max-width: 350px;
   margin-top: 10px;
   color: #aaa;
-  font-size: 18px;
+  font-size: 19px;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -127,7 +127,7 @@
   border-radius: 999px;
   background: #292224;
   color: #ff7d89;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -148,9 +148,9 @@
   border-color: #334a3e;
 }
 
-.metric-list { margin-top: 12px; }
+.metric-list { margin-top: 20px; }
 
-.metric-line { margin-bottom: 6px; }
+.metric-line { margin-bottom: 12px; }
 .metric-line:last-child { margin-bottom: 0; }
 
 .metric-caption {
@@ -163,22 +163,22 @@
   -webkit-box-align: end;
   -webkit-align-items: flex-end;
   align-items: flex-end;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   color: #fff;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
 }
 
 .metric-caption strong {
   color: #fff;
-  font-size: 23px;
+  font-size: 24px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .metric-track {
   width: 100%;
-  height: 10px;
+  height: 13px;
   overflow: hidden;
   border-radius: 999px;
   background: #3a3a3a;
@@ -195,14 +195,14 @@
 
 .network-panel {
   left: 32px;
-  top: 871px;
+  top: 1128px;
   width: 1016px;
-  height: 1025px;
+  height: 768px;
   padding: 32px;
 }
 
 .network-heading {
-  height: 74px;
+  height: 80px;
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
@@ -217,7 +217,7 @@
 .network-heading strong {
   display: block;
   color: #fff;
-  font-size: 30px;
+  font-size: 31px;
   line-height: 1;
 }
 
@@ -225,7 +225,7 @@
   display: block;
   margin-top: 9px;
   color: #999;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .stream-state {
@@ -236,7 +236,7 @@
   -webkit-align-items: center;
   align-items: center;
   color: #b4b4b4;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .stream-state.live { color: #78dcae; }
@@ -250,7 +250,7 @@
 
 .chart-card {
   width: 464px;
-  height: 885px;
+  height: 622px;
   padding: 20px;
   overflow: hidden;
   border: 1px solid #454545;
@@ -263,7 +263,7 @@
 .chart-title strong {
   display: block;
   color: #fff;
-  font-size: 27px;
+  font-size: 28px;
   line-height: 1;
 }
 
@@ -271,7 +271,7 @@
   display: block;
   margin-top: 8px;
   color: #999;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .chart-values {
@@ -283,12 +283,12 @@
 
 .chart-values > div { width: 50%; }
 .chart-values > div + div { text-align: right; }
-.chart-values span { display: block; color: #999; font-size: 16px; }
+.chart-values span { display: block; color: #999; font-size: 17px; }
 
 .chart-values strong {
   display: block;
   margin-top: 5px;
-  font-size: 24px;
+  font-size: 25px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -299,14 +299,14 @@
 .throughput-chart {
   display: block;
   width: 424px;
-  height: 620px;
+  height: 350px;
 }
 
 .chart-legend {
   height: 30px;
   margin-top: 14px;
   color: #aaa;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 20px;
   white-space: nowrap;
 }
