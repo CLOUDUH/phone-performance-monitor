@@ -101,13 +101,19 @@ class TerminalClient:
         output = str(result.stdout or "")
         if result.stderr:
             output += ("\n" if output else "") + str(result.stderr)
-        return {
+        lines = clean_output(output, max_lines)
+        response = {
             "enabled": True,
             "status": "up" if result.exit_status == 0 else "error",
-            "lines": clean_output(output, max_lines),
+            "lines": lines,
             "exit_status": result.exit_status,
             "sampled_at": time.time(),
         }
+        if result.exit_status != 0:
+            response["error"] = f"Ubuntu 日志命令退出码 {result.exit_status}"
+            if lines:
+                response["error"] += f"：{lines[-1]}"
+        return response
 
 
 async def safe_terminal(client: TerminalClient, cfg: dict[str, Any]) -> dict[str, Any]:

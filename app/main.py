@@ -113,7 +113,8 @@ async def test_terminal(x_admin_token: str | None = Header(default=None)):
     result = await safe_terminal(terminal, store.load()["terminal"])
     if result.get("status") != "up":
         raise HTTPException(502, result.get("error") or "Ubuntu 日志命令执行失败")
-    return {"ok": True, "lines": len(result.get("lines", []))}
+    lines = result.get("lines", [])
+    return {"ok": True, "lines": len(lines), "preview": lines[-3:]}
 
 
 @app.get("/api/snapshot")

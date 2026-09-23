@@ -139,9 +139,13 @@
 
   function terminalPanel(terminal) {
     terminal = terminal || {};
-    var status = terminal.status === "up" ? "实时" : terminal.status === "error" ? "连接失败" : "未配置";
     var lines = terminal.lines || [];
-    var output = lines.length ? lines.join("\n") : (terminal.error || "请在设置页配置 Ubuntu SSH 与日志读取命令");
+    var status = terminal.status === "up" ? (lines.length ? "实时" : "等待输出") : terminal.status === "error" ? "读取失败" : "未启用";
+    var output;
+    if (lines.length) output = lines.join("\n");
+    else if (terminal.error) output = terminal.error;
+    else if (terminal.status === "up") output = "SSH 已连接，日志命令执行成功，但当前没有输出。\n请确认训练程序正在写入该日志文件或 systemd journal。";
+    else output = "Ubuntu 输出监控尚未启用，请在设置页启用并保存。";
     return '<section class="terminal-panel"><header><strong>Ubuntu 训练终端</strong><span class="terminal-state ' + escapeHtml(terminal.status || "disabled") + '"><i></i>' + status + '</span></header>' +
       '<pre id="ubuntu-terminal-output">' + escapeHtml(output) + '</pre></section>';
   }
