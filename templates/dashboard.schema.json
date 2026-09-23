@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lan-observer.local/schema/dashboard-v1.json",
-  "title": "LAN Observer dashboard template",
+  "$id": "https://phone-performance-monitor.local/schema/dashboard-v1.json",
+  "title": "Phone Performance Monitor dashboard template",
   "type": "object",
   "required": ["schemaVersion", "name", "orientation", "columns", "widgets"],
   "properties": {
@@ -32,4 +32,3 @@
   },
   "additionalProperties": false
 }
-

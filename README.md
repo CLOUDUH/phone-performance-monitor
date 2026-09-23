@@ -1,4 +1,4 @@
-# LAN Observer
+# Phone Performance Monitor
 
 面向 6 英寸安卓手机的轻量局域网性能看板。一个容器同时提供网页、Beszel 数据代理、爱快路由器 SNMP 采集和设置页。
 
@@ -12,7 +12,7 @@
 ## 启动
 
 ```bash
-cd /Users/cloudu/Hub/lan-observer
+cd /Users/cloudu/Hub/phone-performance-monitor
 docker compose up -d --build
 ```
 
@@ -20,7 +20,7 @@ docker compose up -d --build
 
 设置页面：`http://<Docker主机局域网IP>:18090/settings`
 
-首次进入设置无需 PIN。建议保存时设置至少 4 位管理 PIN。配置保存在 `./data/config.json`，该目录不会打入镜像。
+首次进入设置无需 PIN。建议保存时设置至少 4 位管理 PIN。配置保存在 Docker 命名卷 `phone-performance-monitor-data` 中，更新或重新部署容器不会清除设置。
 
 ## Beszel 设置
 
@@ -88,4 +88,27 @@ docker compose build
 ```
 
 健康检查：`curl http://127.0.0.1:18090/api/health`
-# phone-performance-monitor
+
+## 通过 Portainer 部署
+
+适用于 Portainer 管理本机 Docker Standalone 的场景：
+
+1. 进入目标环境，选择 **Stacks → Add stack → Repository**。
+2. Stack name 填写 `phone-performance-monitor`。
+3. Repository URL 填写 `https://github.com/CLOUDUH/phone-performance-monitor.git`。
+4. Repository reference 选择 `main`，或填写 `refs/heads/main`。
+5. Compose path 填写 `compose.yaml`。
+6. 仓库为公开仓库，不需要启用 Authentication。
+7. 不需要填写额外环境变量，也不需要启用 Relative path volumes。
+8. 第一次部署建议关闭 GitOps 自动更新，点击 **Deploy the stack**。
+
+部署后确认容器 `phone-performance-monitor` 状态为 `healthy`，然后访问：
+
+```text
+仪表盘：http://<Docker主机局域网IP>:18090
+设置页：http://<Docker主机局域网IP>:18090/settings
+```
+
+Docker 主机需要能够访问 GitHub、PyPI、Beszel 的 `192.168.1.83:8090/TCP`，以及路由器就位后的 SNMP `161/UDP`。如果宿主机的 `18090` 已被占用，只需修改 `compose.yaml` 中端口映射左侧的端口。
+
+Portainer 通过 Agent 管理远程 Docker 主机时，较新的 Portainer 版本可能无法在远程环境执行 Compose 中的 `build`。这种场景应先通过 CI 构建并发布容器镜像，再将 Compose 改为引用 `image`。

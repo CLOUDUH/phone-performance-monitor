@@ -21,7 +21,7 @@ store = ConfigStore()
 beszel = BeszelClient()
 snmp = SnmpCollector()
 sessions: dict[str, float] = {}
-app = FastAPI(title="LAN Observer", version="1.0.0", docs_url=None, redoc_url=None)
+app = FastAPI(title="Phone Performance Monitor", version="1.0.0", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

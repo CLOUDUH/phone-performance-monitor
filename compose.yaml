@@ -1,18 +1,21 @@
 services:
-  lan-observer:
-    build: .
-    image: lan-observer:local
-    container_name: lan-observer
+  phone-performance-monitor:
+    build:
+      context: .
+    container_name: phone-performance-monitor
     restart: unless-stopped
     ports:
       - "18090:8080"
     volumes:
-      - ./data:/data
+      - phone-performance-monitor-data:/data
     environment:
-      - TZ=Asia/Shanghai
-      - DATA_DIR=/data
+      TZ: Asia/Shanghai
+      DATA_DIR: /data
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
 
+volumes:
+  phone-performance-monitor-data:
+    name: phone-performance-monitor-data
