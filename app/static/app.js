@@ -4,11 +4,14 @@
   var stage = document.getElementById("monitor-stage");
   var dashboard = document.getElementById("dashboard");
   var lastData = null;
+  var lastHistoryTime = 0;
+  var history = { router: [], devices: [] };
+  var historyLimit = 60;
   var slots = [
-    { label: "UB", aliases: ["ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
-    { label: "Mac", aliases: ["mac", "macbook"], third: "gpu", thirdLabel: "GPU" },
-    { label: "NAS", aliases: ["nas", "synology"], third: "temperature", thirdLabel: "温度" },
-    { label: "PVE", aliases: ["pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
+    { label: "UBCLOUD", detail: "Intel 14700K + NVIDIA 4070Super", aliases: ["ubcloud", "ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
+    { label: "MACCLOUD", detail: "Apple MacBook Pro M1 Pro 2021", aliases: ["maccloud", "mac", "macbook"], third: "gpu", thirdLabel: "GPU" },
+    { label: "SYNCLOUD", detail: "Synology DS423+", aliases: ["syncloud", "nas", "synology"], third: "temperature", thirdLabel: "温度" },
+    { label: "PVECLOUD", detail: "Beelink EQ13 mini Intel N95", aliases: ["pvecloud", "pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
   ];
 
   function escapeHtml(value) {
@@ -29,13 +32,6 @@
     return Math.round(value) + " bps";
   }
 
-  function formatUptime(seconds) {
-    if (!seconds) return "无运行时间数据";
-    var days = Math.floor(seconds / 86400);
-    var hours = Math.floor((seconds % 86400) / 3600);
-    return "已运行 " + (days ? days + " 天 " : "") + hours + " 小时";
-  }
-
   function fitStage() {
     var scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
     var transform = "translate(-50%, -50%) scale(" + scale + ")";
@@ -54,11 +50,25 @@
     });
   }
 
-  function metric(label, value, ringValue, accent, unitClass) {
-    return '<div class="device-metric">' +
-      '<div class="metric-ring" style="--metric-value:' + clamp(ringValue) + ';--metric-accent:' + accent + '">' +
-        '<div class="metric-core"><strong class="' + (unitClass || "") + '">' + escapeHtml(value) + '</strong></div>' +
-      '</div><span>' + escapeHtml(label) + '</span></div>';
+  function metricColor(value, kind) {
+    if (value == null) return "#5d5d5d";
+    value = Number(value) || 0;
+    if (kind === "temperature") {
+      if (value < 55) return "#65d89b";
+      if (value < 70) return "#f0b75a";
+      return "#ee6f78";
+    }
+    if (value < 60) return "#65d89b";
+    if (value < 80) return "#f0b75a";
+    return "#ee6f78";
+  }
+
+  function metric(label, value, rawValue, kind) {
+    var width = rawValue == null ? 0 : clamp(rawValue);
+    var color = metricColor(rawValue, kind);
+    return '<div class="metric-line"><div class="metric-caption"><span>' + escapeHtml(label) + '</span>' +
+      '<strong>' + escapeHtml(value) + '</strong></div><div class="metric-track">' +
+      '<i class="metric-fill" style="width:' + width + '%;background-color:' + color + '"></i></div></div>';
   }
 
   function deviceCard(slot, system, position) {
@@ -68,45 +78,129 @@
     var thirdRing = slot.third === "temperature" ? clamp(thirdValue) : thirdValue;
     return '<article class="device-panel device-' + position + '">' +
       '<header class="device-header"><div><div class="device-label">' + escapeHtml(slot.label) + '</div>' +
-      '<div class="device-detail">' + escapeHtml(system ? system.name + " · " + formatUptime(system.uptime_seconds) : "未匹配到 Beszel 设备") + '</div></div>' +
+      '<div class="device-detail">' + escapeHtml(slot.detail) + '</div></div>' +
       '<div class="device-state ' + (online ? "online" : "offline") + '"><i></i>' + (online ? "在线" : "离线") + '</div></header>' +
-      '<div class="metric-row">' +
-        metric("CPU", percent(system && system.cpu), system && system.cpu, "#36d7ff") +
-        metric("内存", percent(system && system.memory), system && system.memory, "#8a7dff") +
-        metric(slot.thirdLabel, thirdText, thirdRing, slot.third === "gpu" ? "#ffbd5c" : "#45e0a8", slot.third === "temperature" ? "temperature-value" : "") +
+      '<div class="metric-list">' +
+        metric("CPU", percent(system && system.cpu), system && system.cpu, "percent") +
+        metric("内存", percent(system && system.memory), system && system.memory, "percent") +
+        metric(slot.thirdLabel, thirdText, thirdRing, slot.third) +
       '</div></article>';
   }
 
-  function networkTable(orderedSystems, connectionState) {
-    var rows = orderedSystems.map(function (system) {
-      var online = system.status === "up";
-      return '<tr><td><div class="table-device"><i class="table-dot ' + (online ? "online" : "") + '"></i>' +
-        '<strong>' + escapeHtml(system.displayLabel || system.name) + '</strong><span>' + escapeHtml(system.name) + '</span></div></td>' +
-        '<td class="rate download">' + formatRate(system.network_down_bps) + '</td>' +
-        '<td class="rate upload">' + formatRate(system.network_up_bps) + '</td></tr>';
-    }).join("");
-    return '<section class="network-panel"><div class="network-heading"><div><strong>设备网络吞吐</strong><span>Beszel 最近一分钟采样</span></div>' +
+  function sumRates(systems) {
+    return systems.reduce(function (total, system) {
+      total.down += Number(system.network_down_bps) || 0;
+      total.up += Number(system.network_up_bps) || 0;
+      return total;
+    }, { down: 0, up: 0 });
+  }
+
+  function rememberNetwork(data, systems) {
+    var timestamp = Number(data.server_time) || Date.now() / 1000;
+    if (timestamp === lastHistoryTime) return;
+    lastHistoryTime = timestamp;
+    var wan = data.wan || {};
+    var devices = sumRates(systems);
+    history.router.push({ down: Number(wan.download_bps) || 0, up: Number(wan.upload_bps) || 0 });
+    history.devices.push(devices);
+    if (history.router.length > historyLimit) history.router.shift();
+    if (history.devices.length > historyLimit) history.devices.shift();
+  }
+
+  function chartCard(id, title, subtitle, rates) {
+    return '<section class="chart-card"><div class="chart-title"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle) + '</span></div>' +
+      '<div class="chart-values"><div><span>↓ 下载</span><strong class="download-value">' + formatRate(rates.down) + '</strong></div>' +
+      '<div><span>↑ 上传</span><strong class="upload-value">' + formatRate(rates.up) + '</strong></div></div>' +
+      '<canvas id="' + id + '" class="throughput-chart" width="424" height="770"></canvas>' +
+      '<div class="chart-legend"><span class="download-legend"><i></i>下载</span><span class="upload-legend"><i></i>上传</span><em>最近 60 个采样点</em></div></section>';
+  }
+
+  function networkCharts(data, systems, connectionState) {
+    var wan = data.wan || {};
+    var deviceRates = sumRates(systems);
+    var routerRates = { down: Number(wan.download_bps) || 0, up: Number(wan.upload_bps) || 0 };
+    return '<section class="network-panel"><div class="network-heading"><div><strong>实时网络吞吐</strong><span>下载与上传速度趋势</span></div>' +
       '<div class="stream-state ' + connectionState + '"><i></i><span>' + (connectionState === "live" ? "数据流已连接" : "正在连接") + '</span></div></div>' +
-      '<table><thead><tr><th>设备</th><th>↓ 下行速度</th><th>↑ 上行速度</th></tr></thead><tbody>' + rows + '</tbody></table></section>';
+      '<div class="network-charts">' +
+        chartCard("router-chart", "路由器", "爱快 WAN 总吞吐", routerRates) +
+        chartCard("devices-chart", "全部设备", "Beszel 设备合计吞吐", deviceRates) +
+      '</div></section>';
+  }
+
+  function niceMaximum(value) {
+    if (!value || value < 1000) return 1000;
+    var power = Math.pow(10, Math.floor(Math.log(value) / Math.LN10));
+    var scaled = value / power;
+    var nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+    return nice * power;
+  }
+
+  function drawChart(canvas, points) {
+    if (!canvas || !canvas.getContext) return;
+    var context = canvas.getContext("2d");
+    var width = canvas.width;
+    var height = canvas.height;
+    var left = 70;
+    var right = 18;
+    var top = 26;
+    var bottom = 42;
+    var plotWidth = width - left - right;
+    var plotHeight = height - top - bottom;
+    var maximum = niceMaximum(points.reduce(function (highest, point) {
+      return Math.max(highest, point.down, point.up);
+    }, 0));
+
+    context.clearRect(0, 0, width, height);
+    context.font = "16px sans-serif";
+    context.textAlign = "right";
+    context.textBaseline = "middle";
+    for (var line = 0; line <= 4; line += 1) {
+      var y = top + plotHeight * line / 4;
+      context.beginPath();
+      context.strokeStyle = "#3b3b3b";
+      context.lineWidth = 1;
+      context.moveTo(left, y);
+      context.lineTo(width - right, y);
+      context.stroke();
+      context.fillStyle = "#888";
+      context.fillText(formatRate(maximum * (4 - line) / 4), left - 10, y);
+    }
+
+    function series(field, color) {
+      if (!points.length) return;
+      context.beginPath();
+      context.strokeStyle = color;
+      context.lineWidth = 4;
+      context.lineJoin = "round";
+      context.lineCap = "round";
+      points.forEach(function (point, index) {
+        var x = points.length === 1 ? left : left + plotWidth * index / (points.length - 1);
+        var y = top + plotHeight * (1 - Math.min(Number(point[field]) || 0, maximum) / maximum);
+        if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
+      });
+      if (points.length === 1) context.lineTo(width - right, top + plotHeight * (1 - Math.min(Number(points[0][field]) || 0, maximum) / maximum));
+      context.stroke();
+    }
+
+    series("down", "#6ba8ff");
+    series("up", "#65d89b");
   }
 
   function render(data, connectionState) {
     lastData = data;
     var systems = (data.beszel && data.beszel.systems) || [];
+    rememberNetwork(data, systems);
     var used = {};
     var matched = slots.map(function (slot) {
       var system = findSystem(slot, systems, used);
       if (system) used[system.id] = true;
       return system || null;
     });
-    var tableSystems = matched.map(function (system, index) {
-      var result = system || { id: "missing-" + index, name: "未找到", status: "down", network_down_bps: 0, network_up_bps: 0 };
-      return Object.assign({}, result, { displayLabel: slots[index].label });
-    });
-    systems.forEach(function (system) { if (!used[system.id]) tableSystems.push(system); });
     dashboard.innerHTML = deviceCard(slots[0], matched[0], 1) + deviceCard(slots[1], matched[1], 2) +
       deviceCard(slots[2], matched[2], 3) + deviceCard(slots[3], matched[3], 4) +
-      networkTable(tableSystems, connectionState || "waiting");
+      networkCharts(data, systems, connectionState || "waiting");
+    drawChart(document.getElementById("router-chart"), history.router);
+    drawChart(document.getElementById("devices-chart"), history.devices);
   }
 
   function connect() {

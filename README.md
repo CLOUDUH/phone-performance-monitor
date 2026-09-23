@@ -49,11 +49,11 @@ Beszel agent 的常规状态数据本身约按分钟更新；页面与 WAN SNMP 
 
 首页没有标题栏和设置按钮，固定划分为三行两列：
 
-- 第一行：UB（CPU、内存、GPU），Mac（CPU、内存、GPU）。
-- 第二行：NAS（CPU、内存、温度），PVE（CPU、内存、温度）。
-- 第三行：跨两列的全部设备上下行速率表。
+- 第一行：UBCLOUD（CPU、内存、GPU），MACCLOUD（CPU、内存、GPU）。
+- 第二行：SYNCLOUD（CPU、内存、温度），PVECLOUD（CPU、内存、温度）。
+- 第三行：并排展示爱快路由器总吞吐和全部 Beszel 设备合计吞吐的上传、下载折线图。
 
-设备按 Beszel 名称自动匹配，支持 `UB/Ubuntu`、`Mac/MacBook`、`NAS/Synology`、`PVE/Proxmox`。设置页不在首页显示，可直接访问 `/settings`。
+设备按 Beszel 名称自动匹配，兼容新旧名称及 `Ubuntu`、`MacBook`、`NAS/Synology`、`PVE/Proxmox` 别名。设置页不在首页显示，可直接访问 `/settings`。
 
 ## 运维与安全边界
 
