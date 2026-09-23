@@ -239,6 +239,8 @@
 
   function render(data, connectionState) {
     lastData = data;
+    var rotation = Number(data.display && data.display.rotation) === 180 ? 180 : 0;
+    dashboard.setAttribute("data-rotation", String(rotation));
     if (data.server_time) {
       clockEpoch = Number(data.server_time) * 1000;
       clockReceivedAt = Date.now();

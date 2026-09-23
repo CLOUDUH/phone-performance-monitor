@@ -53,6 +53,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "display": {
         "title": "局域网性能监控",
         "orientation": "auto",
+        "rotation": 0,
         "theme": "dark",
         "history_points": 60,
     },

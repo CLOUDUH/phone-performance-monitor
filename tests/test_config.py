@@ -34,6 +34,13 @@ class ConfigStoreTests(unittest.TestCase):
             self.assertEqual(weather["latitude"], 23.1291)
             self.assertEqual(weather["longitude"], 113.2644)
 
+    def test_display_rotation_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ConfigStore(directory)
+            self.assertEqual(store.load()["display"]["rotation"], 0)
+            store.update({"display": {"rotation": 180}})
+            self.assertEqual(store.load()["display"]["rotation"], 180)
+
     def test_terminal_secrets_are_preserved_and_redacted(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ConfigStore(directory)

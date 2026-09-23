@@ -24,6 +24,13 @@
   position: relative;
   width: 1080px;
   height: 1920px;
+  -webkit-transform-origin: center;
+  transform-origin: center;
+}
+
+.fixed-dashboard[data-rotation="180"] {
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .time-panel {
