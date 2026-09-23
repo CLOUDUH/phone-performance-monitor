@@ -37,7 +37,7 @@
   }
 
   function fitStage() {
-    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
     stage.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
   }
 
