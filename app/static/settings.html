@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07101e">
+  <title>LAN Observer 设置</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="settings-body">
+  <header class="topbar"><div><span class="eyebrow">LAN OBSERVER</span><h1>设置</h1></div><a class="button ghost" href="/">返回仪表盘</a></header>
+  <main class="settings-shell">
+    <section id="unlock-card" class="panel narrow">
+      <h2>解锁设置</h2><p class="muted">首次使用无需 PIN。保存管理 PIN 后，后续修改需要先解锁。</p>
+      <div class="field"><label for="login-pin">管理 PIN</label><input id="login-pin" type="password" inputmode="numeric" autocomplete="current-password"></div>
+      <button id="unlock" class="button primary">解锁</button><span id="unlock-result" class="result"></span>
+    </section>
+    <form id="settings-form" class="settings-grid hidden">
+      <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">DATA SOURCE</span><h2>Beszel</h2></div><span id="beszel-state" class="badge">未测试</span></div>
+        <div class="field"><label>地址</label><input name="beszel.url" placeholder="http://192.168.1.83:8090" required></div>
+        <div class="field"><label>邮箱</label><input name="beszel.email" type="email" autocomplete="username"></div>
+        <div class="field"><label>密码</label><input name="beszel.password" type="password" autocomplete="new-password" placeholder="留空则保持不变"></div>
+        <div class="row"><div class="field"><label>轮询间隔（秒）</label><input name="beszel.poll_seconds" type="number" min="1" max="60"></div><label class="switch"><input name="beszel.verify_tls" type="checkbox"><span>校验证书</span></label></div>
+        <button type="button" id="test-beszel" class="button ghost">测试连接</button>
+      </section>
+      <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">ROUTER</span><h2>爱快 SNMP</h2></div><label class="switch"><input name="snmp.enabled" type="checkbox"><span>启用</span></label></div>
+        <div class="row"><div class="field grow"><label>路由器地址</label><input name="snmp.host" placeholder="192.168.1.1"></div><div class="field small"><label>端口</label><input name="snmp.port" type="number"></div></div>
+        <div class="field"><label>SNMP v2c 团体名</label><input name="snmp.community" type="password" placeholder="留空则保持不变"></div>
+        <div class="row"><div class="field grow"><label>WAN 接口</label><select name="snmp.interface_index"><option value="0">路由器就位后发现</option></select></div><button type="button" id="discover-snmp" class="button ghost align-end">发现接口</button></div>
+        <details><summary>高级 OID</summary><div class="field"><label>下载计数器 OID</label><input name="snmp.download_oid"></div><div class="field"><label>上传计数器 OID</label><input name="snmp.upload_oid"></div></details>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">DISPLAY</span><h2>显示与模板</h2>
+        <div class="field"><label>标题</label><input name="display.title"></div>
+        <div class="row"><div class="field grow"><label>方向</label><select name="display.orientation"><option value="auto">自动</option><option value="landscape">横屏</option><option value="portrait">竖屏</option></select></div><div class="field grow"><label>历史点数</label><input name="display.history_points" type="number" min="10" max="300"></div></div>
+        <div class="template-actions"><button type="button" data-template="landscape" class="button ghost">载入横屏模板</button><button type="button" data-template="portrait" class="button ghost">载入竖屏模板</button><label class="button ghost file-button">导入 JSON<input id="template-file" type="file" accept="application/json"></label><button type="button" id="export-template" class="button ghost">导出 JSON</button></div>
+        <div class="field"><label>模板 JSON</label><textarea id="template-json" rows="13" spellcheck="false"></textarea></div>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">SECURITY</span><h2>管理保护</h2>
+        <div class="field"><label>设置或更换管理 PIN</label><input name="admin_pin" type="password" inputmode="numeric" minlength="4" placeholder="留空则保持不变"></div>
+        <p class="muted">仪表盘默认仅适合可信局域网。密码和 SNMP 团体名只保存在 Docker 数据卷，不会返回给浏览器。</p>
+      </section>
+      <div class="savebar"><span id="save-result" class="result"></span><button class="button primary" type="submit">保存全部设置</button></div>
+    </form>
+  </main>
+  <script src="/static/settings.js" defer></script>
+</body>
+</html>

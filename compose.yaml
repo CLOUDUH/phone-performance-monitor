@@ -1,0 +1,18 @@
+services:
+  lan-observer:
+    build: .
+    image: lan-observer:local
+    container_name: lan-observer
+    restart: unless-stopped
+    ports:
+      - "18090:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - DATA_DIR=/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+

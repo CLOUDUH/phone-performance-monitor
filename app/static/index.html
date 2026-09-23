@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#07101e">
+  <title>局域网性能监控</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><span class="eyebrow">LAN OBSERVER</span><h1 id="page-title">局域网性能监控</h1></div>
+    <div class="top-actions"><span id="connection" class="connection waiting">连接中</span><a class="icon-button" href="/settings" aria-label="设置">⚙</a></div>
+  </header>
+  <main id="dashboard" class="dashboard" aria-live="polite"></main>
+  <div id="toast" class="toast"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

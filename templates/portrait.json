@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "1080p 竖屏",
+  "orientation": "portrait",
+  "columns": 6,
+  "gap": 14,
+  "widgets": [
+    { "id": "wan", "type": "wan", "title": "互联网", "x": 1, "y": 1, "w": 6, "h": 3, "options": { "showChart": true } },
+    { "id": "status", "type": "status", "title": "运行概览", "x": 1, "y": 4, "w": 3, "h": 2, "options": {} },
+    { "id": "clock", "type": "clock", "title": "时间", "x": 4, "y": 4, "w": 3, "h": 2, "options": {} },
+    { "id": "systems", "type": "systems", "title": "设备性能", "x": 1, "y": 6, "w": 6, "h": 12, "options": { "metrics": ["cpu", "memory", "disk", "temperature"] } }
+  ]
+}
+
