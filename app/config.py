@@ -29,6 +29,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "poll_seconds": 2,
         "timeout_seconds": 2,
     },
+    "weather": {
+        "enabled": True,
+        "location": "北京",
+        "latitude": 39.9042,
+        "longitude": 116.4074,
+        "refresh_minutes": 30,
+    },
     "display": {
         "title": "局域网性能监控",
         "orientation": "auto",
@@ -80,7 +87,7 @@ class ConfigStore:
 
     def update(self, incoming: dict[str, Any]) -> dict[str, Any]:
         data = self.load()
-        for section in ("beszel", "snmp", "display"):
+        for section in ("beszel", "snmp", "weather", "display"):
             values = incoming.get(section)
             if not isinstance(values, dict):
                 continue
@@ -106,4 +113,3 @@ class ConfigStore:
     @staticmethod
     def _hash_pin(pin: str, salt: str) -> str:
         return hashlib.scrypt(pin.encode(), salt=bytes.fromhex(salt), n=2**14, r=8, p=1).hex()
-

@@ -25,7 +25,15 @@ class ConfigStoreTests(unittest.TestCase):
             self.assertTrue(store.verify_pin("2468"))
             self.assertFalse(store.verify_pin("1357"))
 
+    def test_weather_settings_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ConfigStore(directory)
+            store.update({"weather": {"location": "广州", "latitude": 23.1291, "longitude": 113.2644}})
+            weather = store.load()["weather"]
+            self.assertEqual(weather["location"], "广州")
+            self.assertEqual(weather["latitude"], 23.1291)
+            self.assertEqual(weather["longitude"], 113.2644)
+
 
 if __name__ == "__main__":
     unittest.main()
-

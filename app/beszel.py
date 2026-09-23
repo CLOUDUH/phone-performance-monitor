@@ -102,6 +102,7 @@ class BeszelClient:
                 "uptime_seconds": info.get("u"),
                 "temperature": info.get("dt"),
                 "load": info.get("la") or [info.get("l1"), info.get("l5"), info.get("l15")],
+                "threads": info.get("t") or info.get("c"),
                 "agent_version": info.get("v"),
             })
         return {"systems": systems, "source": self._base_url(cfg.get("url", "")), "sampled_at": time.time()}

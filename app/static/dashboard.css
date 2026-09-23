@@ -26,6 +26,41 @@
   height: 1920px;
 }
 
+.time-panel {
+  position: absolute;
+  left: 32px;
+  top: 24px;
+  width: 1016px;
+  height: 145px;
+  text-align: center;
+  color: #fff;
+}
+
+.time-panel strong,
+.time-panel span {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-panel strong {
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: .025em;
+}
+
+.time-panel span {
+  margin-top: 10px;
+  font-size: 22px;
+  line-height: 1.15;
+  color: #bcbcbc;
+}
+
+.time-panel span + span {
+  margin-top: 8px;
+  font-size: 21px;
+  color: #a8a8a8;
+}
+
 .device-panel,
 .network-panel {
   position: absolute;
@@ -43,10 +78,10 @@
   padding: 24px 26px;
 }
 
-.device-1 { left: 32px; top: 32px; }
-.device-2 { left: 552px; top: 32px; }
-.device-3 { left: 32px; top: 371px; }
-.device-4 { left: 552px; top: 371px; }
+.device-1 { left: 32px; top: 193px; }
+.device-2 { left: 552px; top: 193px; }
+.device-3 { left: 32px; top: 532px; }
+.device-4 { left: 552px; top: 532px; }
 
 .device-header {
   display: -webkit-box;
@@ -113,9 +148,9 @@
   border-color: #334a3e;
 }
 
-.metric-list { margin-top: 20px; }
+.metric-list { margin-top: 12px; }
 
-.metric-line { margin-bottom: 15px; }
+.metric-line { margin-bottom: 6px; }
 .metric-line:last-child { margin-bottom: 0; }
 
 .metric-caption {
@@ -128,22 +163,22 @@
   -webkit-box-align: end;
   -webkit-align-items: flex-end;
   align-items: flex-end;
-  margin-bottom: 7px;
-  color: #aaa;
-  font-size: 17px;
-  font-weight: 650;
+  margin-bottom: 5px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .metric-caption strong {
   color: #fff;
-  font-size: 22px;
+  font-size: 23px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .metric-track {
   width: 100%;
-  height: 13px;
+  height: 10px;
   overflow: hidden;
   border-radius: 999px;
   background: #3a3a3a;
@@ -160,9 +195,9 @@
 
 .network-panel {
   left: 32px;
-  top: 710px;
+  top: 871px;
   width: 1016px;
-  height: 1178px;
+  height: 1025px;
   padding: 32px;
 }
 
@@ -215,7 +250,7 @@
 
 .chart-card {
   width: 464px;
-  height: 1040px;
+  height: 885px;
   padding: 20px;
   overflow: hidden;
   border: 1px solid #454545;
@@ -264,7 +299,7 @@
 .throughput-chart {
   display: block;
   width: 424px;
-  height: 770px;
+  height: 620px;
 }
 
 .chart-legend {

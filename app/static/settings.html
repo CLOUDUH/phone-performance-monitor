@@ -33,6 +33,13 @@
         <details><summary>高级 OID</summary><div class="field"><label>下载计数器 OID</label><input name="snmp.download_oid"></div><div class="field"><label>上传计数器 OID</label><input name="snmp.upload_oid"></div></details>
       </section>
       <section class="panel">
+        <div class="section-title"><div><span class="eyebrow">WEATHER</span><h2>顶部天气</h2></div><label class="switch"><input name="weather.enabled" type="checkbox"><span>启用</span></label></div>
+        <div class="field"><label>地点名称</label><input name="weather.location" placeholder="北京"></div>
+        <div class="row"><div class="field grow"><label>纬度</label><input name="weather.latitude" type="number" min="-90" max="90" step="0.0001"></div><div class="field grow"><label>经度</label><input name="weather.longitude" type="number" min="-180" max="180" step="0.0001"></div></div>
+        <div class="field"><label>刷新间隔（分钟）</label><input name="weather.refresh_minutes" type="number" min="10" max="180"></div>
+        <p class="muted">默认显示北京天气。修改经纬度后可显示其他城市，数据来自 Open-Meteo。</p>
+      </section>
+      <section class="panel">
         <span class="eyebrow">SECURITY</span><h2>管理保护</h2>
         <div class="field"><label>设置或更换管理 PIN</label><input name="admin_pin" type="password" inputmode="numeric" minlength="4" placeholder="留空则保持不变"></div>
         <p class="muted">仪表盘默认仅适合可信局域网。密码和 SNMP 团体名只保存在 Docker 数据卷，不会返回给浏览器。</p>
@@ -40,6 +47,6 @@
       <div class="savebar"><span id="save-result" class="result"></span><button class="button primary" type="submit">保存全部设置</button></div>
     </form>
   </main>
-  <script src="/static/settings.js" defer></script>
+  <script src="/static/settings.js?v=weather-1" defer></script>
 </body>
 </html>

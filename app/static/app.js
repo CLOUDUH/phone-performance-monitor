@@ -7,9 +7,11 @@
   var lastHistoryTime = 0;
   var history = { router: [], devices: [] };
   var historyLimit = 60;
+  var clockEpoch = Date.now();
+  var clockReceivedAt = Date.now();
   var slots = [
     { label: "UBCLOUD", detail: "Intel 14700K + NVIDIA 4070Super", aliases: ["ubcloud", "ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
-    { label: "MACCLOUD", detail: "Apple MacBook Pro M1 Pro 2021", aliases: ["maccloud", "mac", "macbook"], third: "gpu", thirdLabel: "GPU" },
+    { label: "MACCLOUD", detail: "Apple MacBook Pro M1 Pro 2021", aliases: ["maccloud", "mac", "macbook"], third: "temperature", thirdLabel: "温度" },
     { label: "SYNCLOUD", detail: "Synology DS423+", aliases: ["syncloud", "nas", "synology"], third: "temperature", thirdLabel: "温度" },
     { label: "PVECLOUD", detail: "Beelink EQ13 mini Intel N95", aliases: ["pvecloud", "pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
   ];
@@ -23,6 +25,7 @@
   function clamp(value) { return Math.max(0, Math.min(100, Number(value) || 0)); }
   function percent(value) { return value == null ? "--" : Math.round(Number(value)) + "%"; }
   function temperature(value) { return value == null ? "--" : Math.round(Number(value)) + "°C"; }
+  function pad(value) { return value < 10 ? "0" + value : String(value); }
 
   function formatRate(value) {
     value = Number(value) || 0;
@@ -71,11 +74,24 @@
       '<i class="metric-fill" style="width:' + width + '%;background-color:' + color + '"></i></div></div>';
   }
 
+  function loadAverage(system) {
+    if (!system || !system.load || system.load.length === 0 || system.load[0] == null) return null;
+    var value = Number(system.load[0]);
+    return isFinite(value) ? value : null;
+  }
+
+  function loadPercent(system, value) {
+    if (value == null) return null;
+    var threads = Number(system && system.threads) || 0;
+    return threads > 0 ? value / threads * 100 : value * 10;
+  }
+
   function deviceCard(slot, system, position) {
     var online = system && system.status === "up";
     var thirdValue = system ? system[slot.third] : null;
     var thirdText = slot.third === "temperature" ? temperature(thirdValue) : percent(thirdValue);
     var thirdRing = slot.third === "temperature" ? clamp(thirdValue) : thirdValue;
+    var load = loadAverage(system);
     return '<article class="device-panel device-' + position + '">' +
       '<header class="device-header"><div><div class="device-label">' + escapeHtml(slot.label) + '</div>' +
       '<div class="device-detail">' + escapeHtml(slot.detail) + '</div></div>' +
@@ -84,7 +100,32 @@
         metric("CPU", percent(system && system.cpu), system && system.cpu, "percent") +
         metric("内存", percent(system && system.memory), system && system.memory, "percent") +
         metric(slot.thirdLabel, thirdText, thirdRing, slot.third) +
+        metric("系统负载", load == null ? "--" : load.toFixed(2), loadPercent(system, load), "percent") +
       '</div></article>';
+  }
+
+  function currentClock() {
+    var beijing = new Date(clockEpoch + (Date.now() - clockReceivedAt) + 8 * 3600000);
+    return pad(beijing.getUTCHours()) + ":" + pad(beijing.getUTCMinutes()) + ":" + pad(beijing.getUTCSeconds());
+  }
+
+  function weatherLine(weather) {
+    if (!weather || (weather.status !== "up" && weather.status !== "stale")) return "天气数据暂不可用";
+    return Math.round(Number(weather.minimum)) + "–" + Math.round(Number(weather.maximum)) + "摄氏度  " +
+      escapeHtml(weather.condition || "天气未知") + "  降雨" + Math.round(Number(weather.precipitation_probability) || 0) + "%概率";
+  }
+
+  function timePanel(data) {
+    var calendar = data.calendar || {};
+    var dateLine = calendar.date ? calendar.date + "  " + calendar.weekday + "  " + calendar.lunar : "正在获取日期";
+    return '<header class="time-panel"><strong id="beijing-clock">' + currentClock() + '</strong>' +
+      '<span id="beijing-date">' + escapeHtml(dateLine) + '</span>' +
+      '<span id="beijing-weather">' + weatherLine(data.weather) + '</span></header>';
+  }
+
+  function tickClock() {
+    var clock = document.getElementById("beijing-clock");
+    if (clock) clock.textContent = currentClock();
   }
 
   function sumRates(systems) {
@@ -111,7 +152,7 @@
     return '<section class="chart-card"><div class="chart-title"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle) + '</span></div>' +
       '<div class="chart-values"><div><span>↓ 下载</span><strong class="download-value">' + formatRate(rates.down) + '</strong></div>' +
       '<div><span>↑ 上传</span><strong class="upload-value">' + formatRate(rates.up) + '</strong></div></div>' +
-      '<canvas id="' + id + '" class="throughput-chart" width="424" height="770"></canvas>' +
+      '<canvas id="' + id + '" class="throughput-chart" width="424" height="620"></canvas>' +
       '<div class="chart-legend"><span class="download-legend"><i></i>下载</span><span class="upload-legend"><i></i>上传</span><em>最近 60 个采样点</em></div></section>';
   }
 
@@ -188,6 +229,10 @@
 
   function render(data, connectionState) {
     lastData = data;
+    if (data.server_time) {
+      clockEpoch = Number(data.server_time) * 1000;
+      clockReceivedAt = Date.now();
+    }
     var systems = (data.beszel && data.beszel.systems) || [];
     rememberNetwork(data, systems);
     var used = {};
@@ -196,7 +241,7 @@
       if (system) used[system.id] = true;
       return system || null;
     });
-    dashboard.innerHTML = deviceCard(slots[0], matched[0], 1) + deviceCard(slots[1], matched[1], 2) +
+    dashboard.innerHTML = timePanel(data) + deviceCard(slots[0], matched[0], 1) + deviceCard(slots[1], matched[1], 2) +
       deviceCard(slots[2], matched[2], 3) + deviceCard(slots[3], matched[3], 4) +
       networkCharts(data, systems, connectionState || "waiting");
     drawChart(document.getElementById("router-chart"), history.router);
@@ -215,5 +260,6 @@
   fitStage();
   render({ beszel: { systems: [] } }, "waiting");
   connect();
+  window.setInterval(tickClock, 250);
   window.addEventListener("resize", fitStage);
 })();

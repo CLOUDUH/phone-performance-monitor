@@ -15,7 +15,7 @@ class BeszelClientTests(unittest.IsolatedAsyncioTestCase):
                     "host": "192.168.1.10",
                     "status": "up",
                     "updated": "2026-09-23 00:00:00Z",
-                    "info": {"cpu": 21.4, "mp": 48.2, "g": 67, "u": 3600, "v": "0.13.2"},
+                    "info": {"cpu": 21.4, "mp": 48.2, "g": 67, "u": 3600, "v": "0.13.2", "la": [1.25, 1.1, 0.9], "t": 28},
                 }]
             },
             {
@@ -32,6 +32,8 @@ class BeszelClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(system["gpu"], 67)
         self.assertEqual(system["network_up_bps"], 1000000)
         self.assertEqual(system["network_down_bps"], 7000000)
+        self.assertEqual(system["load"], [1.25, 1.1, 0.9])
+        self.assertEqual(system["threads"], 28)
 
     async def test_snapshot_falls_back_when_stats_collection_is_unavailable(self):
         client = BeszelClient()

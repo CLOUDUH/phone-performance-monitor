@@ -4,3 +4,4 @@ uvicorn[standard]==0.35.0
 httpx==0.28.1
 pysnmp==7.1.21
 pydantic==2.11.7
+cnlunardate==0.0.4

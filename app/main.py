@@ -11,14 +11,17 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .beszel import BeszelClient
+from .calendar_info import beijing_calendar
 from .config import ConfigStore
 from .snmp import SnmpCollector, safe_sample
+from .weather import WeatherClient, safe_weather
 
 
 STATIC = Path(__file__).resolve().parent / "static"
 store = ConfigStore()
 beszel = BeszelClient()
 snmp = SnmpCollector()
+weather = WeatherClient()
 sessions: dict[str, float] = {}
 app = FastAPI(title="Phone Performance Monitor", version="1.0.0", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -108,11 +111,14 @@ async def snapshot():
     results = await asyncio.gather(
         beszel.snapshot(config["beszel"]),
         safe_sample(snmp, config["snmp"]),
+        safe_weather(weather, config["weather"]),
         return_exceptions=True,
     )
     beszel_data = results[0] if not isinstance(results[0], Exception) else {"systems": [], "error": str(results[0])}
     snmp_data = results[1] if not isinstance(results[1], Exception) else {"status": "error", "error": str(results[1])}
-    return {"beszel": beszel_data, "wan": snmp_data, "display": config["display"], "server_time": time.time()}
+    weather_data = results[2] if not isinstance(results[2], Exception) else {"status": "error", "error": str(results[2])}
+    now = time.time()
+    return {"beszel": beszel_data, "wan": snmp_data, "weather": weather_data, "calendar": beijing_calendar(now), "display": config["display"], "server_time": now}
 
 
 @app.get("/api/events")
@@ -123,13 +129,17 @@ async def events(request: Request):
             results = await asyncio.gather(
                 beszel.snapshot(config["beszel"]),
                 safe_sample(snmp, config["snmp"]),
+                safe_weather(weather, config["weather"]),
                 return_exceptions=True,
             )
+            now = time.time()
             payload: dict[str, Any] = {
                 "beszel": results[0] if not isinstance(results[0], Exception) else {"systems": [], "error": str(results[0])},
                 "wan": results[1] if not isinstance(results[1], Exception) else {"status": "error", "error": str(results[1])},
+                "weather": results[2] if not isinstance(results[2], Exception) else {"status": "error", "error": str(results[2])},
+                "calendar": beijing_calendar(now),
                 "display": config["display"],
-                "server_time": time.time(),
+                "server_time": now,
             }
             yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
             seconds = min(float(config["beszel"].get("poll_seconds", 5)), float(config["snmp"].get("poll_seconds", 2)))
