@@ -160,10 +160,10 @@
     var routerLegend = '<div class="legend-row legend-directions">' + lineLegend("#7fb8ff", "下载", false) + lineLegend("#7fb8ff", "上传", true) + '</div>';
     var deviceLegend = '<div class="legend-row legend-devices">' + slots.map(function (slot) {
       return lineLegend(slot.color, slot.label, false);
-    }).join("") + '</div><div class="legend-row legend-directions">' + lineLegend("#aaa", "下载", false) + lineLegend("#aaa", "上传", true) + '</div>';
+    }).join("") + '</div>';
     return '<section class="network-panel"><div class="network-charts">' +
       chartCard("router-chart", "路由器曲线图", routerLegend) +
-      chartCard("devices-chart", "设备下载", deviceLegend) +
+      chartCard("devices-chart", "设备流量吞吐", deviceLegend) +
       '</div></section>';
   }
 

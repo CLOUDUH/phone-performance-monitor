@@ -29,7 +29,7 @@
 .time-panel {
   position: absolute;
   left: 32px;
-  top: 24px;
+  top: 57px;
   width: 1016px;
   height: 252px;
   text-align: center;
@@ -84,10 +84,10 @@
   padding: 24px 26px;
 }
 
-.device-1 { left: 32px; top: 300px; }
-.device-2 { left: 552px; top: 300px; }
-.device-3 { left: 32px; top: 714px; }
-.device-4 { left: 552px; top: 714px; }
+.device-1 { left: 32px; top: 333px; }
+.device-2 { left: 552px; top: 333px; }
+.device-3 { left: 32px; top: 747px; }
+.device-4 { left: 552px; top: 747px; }
 
 .device-header {
   display: -webkit-box;
@@ -201,7 +201,7 @@
 
 .terminal-panel {
   left: 32px;
-  top: 1128px;
+  top: 1161px;
   width: 1016px;
   height: 330px;
   padding: 22px 26px;
@@ -265,9 +265,9 @@
 
 .network-panel {
   left: 32px;
-  top: 1482px;
+  top: 1515px;
   width: 1016px;
-  height: 414px;
+  height: 348px;
 }
 
 .network-charts {
@@ -279,7 +279,7 @@
 
 .chart-card {
   width: 496px;
-  height: 414px;
+  height: 348px;
   padding: 20px;
 }
 
@@ -300,7 +300,6 @@
 }
 
 .chart-legend {
-  height: 82px;
   margin-top: 8px;
   color: #aaa;
   font-size: 14px;
@@ -316,6 +315,9 @@
   -webkit-box-align: center;
   -webkit-align-items: center;
   align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
   min-height: 22px;
 }
 
