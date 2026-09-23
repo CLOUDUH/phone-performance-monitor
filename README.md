@@ -74,7 +74,20 @@ docker compose build
 
 ## 通过 Portainer 部署
 
-适用于 Portainer 管理本机 Docker Standalone 的场景：
+### 推荐：Web editor 直接拉取镜像
+
+此方式不需要 Portainer 克隆 GitHub 仓库，适合 GitHub Git 接口出现超时或 `unexpected EOF` 的环境：
+
+1. 进入目标环境，选择 **Stacks → Add stack → Web editor**。
+2. Stack name 填写 `phone-performance-monitor`。
+3. 粘贴仓库中的 `compose.portainer.yaml` 全部内容。
+4. 点击 **Deploy the stack**。
+
+镜像为 `ghcr.io/clouduh/phone-performance-monitor:latest`，支持 `linux/amd64` 和 `linux/arm64`。更新时启用镜像重新拉取后重新部署。命名卷 `phone-performance-monitor-data` 保存网页设置，不要删除该卷。
+
+### Repository 方式
+
+仅在 Portainer 主机能够稳定访问 GitHub 时使用：
 
 1. 进入目标环境，选择 **Stacks → Add stack → Repository**。
 2. Stack name 填写 `phone-performance-monitor`。
