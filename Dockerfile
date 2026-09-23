@@ -1,7 +1,5 @@
 FROM python:3.12-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/CLOUDUH/phone-performance-monitor"
-
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
