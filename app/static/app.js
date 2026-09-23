@@ -38,7 +38,9 @@
 
   function fitStage() {
     var scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
-    stage.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+    var transform = "translate(-50%, -50%) scale(" + scale + ")";
+    stage.style.webkitTransform = transform;
+    stage.style.transform = transform;
   }
 
   function findSystem(slot, systems, used) {

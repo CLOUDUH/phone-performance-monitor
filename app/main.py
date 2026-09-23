@@ -47,7 +47,7 @@ def require_auth(token: str | None) -> None:
 
 @app.get("/")
 async def index():
-    return FileResponse(STATIC / "index.html")
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/settings")
