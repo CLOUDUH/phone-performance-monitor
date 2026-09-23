@@ -7,7 +7,7 @@
 - 已按现场 Beszel `0.13.2` 的 PocketBase API 字段实现，兼容 `systems.info` 中的新旧带宽字段。
 - Beszel 地址预填为 `http://192.168.1.83:8090`；账号需在设置页填写。
 - 爱快尚未就位，因此 SNMP 默认关闭。就位后在网页中填写地址、团体名并“发现接口”。
-- 横屏和竖屏各有一套 JSON 模板。运行镜像不包含 React、Node 或可视化编辑器。
+- 首页采用固定的 `1920×1080` 逻辑画布，任何浏览器只做等比例缩放，不产生页面滚动。
 
 ## 启动
 
@@ -45,32 +45,15 @@ Beszel agent 的常规状态数据本身约按分钟更新；页面与 WAN SNMP 
 
 如果爱快对 WAN 方向的定义与物理接口方向相反，可直接在高级设置中互换两个 OID。
 
-## JSON 模板
+## 固定仪表盘布局
 
-内置模板位于：
+首页没有标题栏和设置按钮，固定划分为三行两列：
 
-- `templates/landscape.json`
-- `templates/portrait.json`
-- 规范：`templates/dashboard.schema.json`
+- 第一行：UB（CPU、内存、GPU），Mac（CPU、内存、GPU）。
+- 第二行：NAS（CPU、内存、温度），PVE（CPU、内存、温度）。
+- 第三行：跨两列的全部设备上下行速率表。
 
-设置页支持载入、编辑、导入和导出模板。模板保存在手机浏览器的 `localStorage`，因此界面调整不会增加镜像体积，也不会影响其他手机。
-
-diagrams.net / draw.io 适合做布局草图，但其 XML 画布格式不适合作为运行时配置。本项目采用更稳定、可校验的 JSON Schema：在 draw.io 按 12 列（横屏）或 6 列（竖屏）画草图，再把组件的 `x/y/w/h` 填入 JSON 即可。可用的组件类型为 `wan`、`systems`、`status`、`clock`。
-
-示例组件：
-
-```json
-{
-  "id": "systems",
-  "type": "systems",
-  "title": "设备性能",
-  "x": 1,
-  "y": 4,
-  "w": 12,
-  "h": 7,
-  "options": { "metrics": ["cpu", "memory", "disk", "temperature"] }
-}
-```
+设备按 Beszel 名称自动匹配，支持 `UB/Ubuntu`、`Mac/MacBook`、`NAS/Synology`、`PVE/Proxmox`。设置页不在首页显示，可直接访问 `/settings`。
 
 ## 运维与安全边界
 

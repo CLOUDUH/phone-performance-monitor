@@ -15,7 +15,6 @@ from .config import ConfigStore
 from .snmp import SnmpCollector, safe_sample
 
 
-ROOT = Path(__file__).resolve().parent.parent
 STATIC = Path(__file__).resolve().parent / "static"
 store = ConfigStore()
 beszel = BeszelClient()
@@ -136,10 +135,3 @@ async def events(request: Request):
             seconds = min(float(config["beszel"].get("poll_seconds", 5)), float(config["snmp"].get("poll_seconds", 2)))
             await asyncio.sleep(max(seconds, 1))
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-
-
-@app.get("/api/templates/{name}")
-async def template(name: str):
-    if name not in {"landscape", "portrait"}:
-        raise HTTPException(404)
-    return FileResponse(ROOT / "templates" / f"{name}.json", media_type="application/json")

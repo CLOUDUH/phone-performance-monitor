@@ -1,22 +1,123 @@
-(function(){
+(function () {
   "use strict";
-  var dashboard=document.getElementById("dashboard"), connection=document.getElementById("connection"), title=document.getElementById("page-title");
-  var histories={down:[],up:[]}, template=null, lastData=null, clockTimer=null;
-  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
-  function formatRate(v){v=Number(v)||0;if(v>=1e9)return(v/1e9).toFixed(2)+" Gbps";if(v>=1e6)return(v/1e6).toFixed(1)+" Mbps";if(v>=1e3)return(v/1e3).toFixed(0)+" Kbps";return v.toFixed(0)+" bps"}
-  function pct(v){return v==null?"--":Math.round(Number(v))+"%"}
-  function clamp(v){return Math.max(0,Math.min(100,Number(v)||0))}
-  function uptime(v){if(!v)return"--";var d=Math.floor(v/86400),h=Math.floor(v%86400/3600);return d?d+"天 "+h+"时":h+"小时"}
-  function widgetShell(w,body,cls){return '<section class="widget '+(cls||"")+'" style="--x:'+w.x+';--y:'+w.y+';--w:'+w.w+';--h:'+w.h+'"><div class="widget-head"><h2>'+esc(w.title)+'</h2></div>'+body+'</section>'}
-  function renderWan(w,data){var wan=data.wan||{},status=wan.status||"disabled";return widgetShell(w,'<div class="wan-values"><div><span class="metric-label">↓ 下载</span><div class="metric-big down">'+formatRate(wan.download_bps)+'</div></div><div><span class="metric-label">↑ 上传</span><div class="metric-big up">'+formatRate(wan.upload_bps)+'</div></div></div><div class="sparkline"><canvas id="wan-chart"></canvas></div><span class="metric-label">SNMP · '+esc(status==="disabled"?"尚未启用":status)+"</span>",'wan')}
-  function renderSystems(w,data){var systems=(data.beszel&&data.beszel.systems)||[];var html=systems.map(function(s){return '<article class="system-card"><div class="system-card-head"><div><div class="system-name">'+esc(s.name)+'</div><span class="metric-label">'+esc(s.status==="up"?"在线 · "+uptime(s.uptime_seconds):"离线")+'</span></div><i class="status-dot '+(s.status==="up"?"up":"")+'"></i></div><div class="meters"><div class="meter"><span class="metric-label">CPU</span><strong>'+pct(s.cpu)+'</strong><div class="bar"><i style="--value:'+clamp(s.cpu)+'%"></i></div></div><div class="meter"><span class="metric-label">内存</span><strong>'+pct(s.memory)+'</strong><div class="bar"><i style="--value:'+clamp(s.memory)+'%"></i></div></div><div class="meter"><span class="metric-label">磁盘</span><strong>'+pct(s.disk)+'</strong><div class="bar"><i style="--value:'+clamp(s.disk)+'%"></i></div></div></div></article>'}).join("");return widgetShell(w,'<div class="system-grid">'+(html||'<div class="empty">尚无 Beszel 数据<br>请打开设置并填写账号</div>')+'</div>','systems')}
-  function renderStatus(w,data){var systems=(data.beszel&&data.beszel.systems)||[],up=systems.filter(function(s){return s.status==="up"}).length;return widgetShell(w,'<div class="overview"><div class="overview-item"><strong>'+up+'</strong><span class="metric-label">在线</span></div><div class="overview-item"><strong>'+systems.length+'</strong><span class="metric-label">设备</span></div><div class="overview-item"><strong>'+systems.filter(function(s){return s.status!=="up"}).length+'</strong><span class="metric-label">异常</span></div></div>','status')}
-  function renderClock(w){return widgetShell(w,'<div class="clock"><div><strong id="clock-time">--:--</strong><span id="clock-date">----</span></div></div>','clock')}
-  function validate(t){if(!t||t.schemaVersion!==1||!Array.isArray(t.widgets)||!t.columns)throw new Error("模板格式无效");t.widgets.forEach(function(w){if(!w.id||["wan","systems","status","clock"].indexOf(w.type)<0)throw new Error("模板包含不支持的组件")});return t}
-  function drawChart(){var c=document.getElementById("wan-chart");if(!c)return;var r=c.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),ctx=c.getContext("2d");c.width=Math.max(1,r.width*dpr);c.height=Math.max(1,r.height*dpr);ctx.scale(dpr,dpr);var all=histories.down.concat(histories.up),max=Math.max.apply(Math,all.concat([1]));function line(values,color){ctx.beginPath();values.forEach(function(v,i){var x=values.length<2?0:i*r.width/(values.length-1),y=r.height-(v/max)*(r.height-4)-2;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke()}line(histories.down,"#36d7ff");line(histories.up,"#45e0a8")}
-  function tickClock(){var n=new Date(),el=document.getElementById("clock-time"),date=document.getElementById("clock-date");if(el)el.textContent=n.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});if(date)date.textContent=n.toLocaleDateString("zh-CN",{weekday:"long",month:"long",day:"numeric"})}
-  function render(data){lastData=data;var display=data.display||{},orientation=display.orientation||template.orientation||"auto";if(orientation==="auto")orientation=window.innerHeight>window.innerWidth?"portrait":"landscape";title.textContent=display.title||"局域网性能监控";dashboard.dataset.orientation=orientation;dashboard.style.setProperty("--columns",template.columns);dashboard.style.setProperty("--gap",(template.gap||14)+"px");var wan=data.wan||{},limit=Number(display.history_points)||60;histories.down.push(Number(wan.download_bps)||0);histories.up.push(Number(wan.upload_bps)||0);histories.down=histories.down.slice(-limit);histories.up=histories.up.slice(-limit);dashboard.innerHTML=template.widgets.map(function(w){if(w.type==="wan")return renderWan(w,data);if(w.type==="systems")return renderSystems(w,data);if(w.type==="status")return renderStatus(w,data);return renderClock(w)}).join("");drawChart();tickClock();if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(tickClock,1000)}
-  function loadTemplate(){var saved=localStorage.getItem("lanObserverTemplate");if(saved){try{return Promise.resolve(validate(JSON.parse(saved)))}catch(e){localStorage.removeItem("lanObserverTemplate")}}var portrait=matchMedia("(orientation: portrait)").matches;return fetch("/api/templates/"+(portrait?"portrait":"landscape")).then(function(r){return r.json()}).then(validate)}
-  function connect(){var events=new EventSource("/api/events");events.onopen=function(){connection.className="connection live";connection.textContent="实时连接"};events.onmessage=function(e){try{var data=JSON.parse(e.data);render(data);if(data.beszel&&data.beszel.error){connection.className="connection error";connection.textContent="Beszel 待配置"}}catch(err){console.error(err)}};events.onerror=function(){connection.className="connection error";connection.textContent="正在重连"}}
-  loadTemplate().then(function(t){template=t;connect()}).catch(function(e){dashboard.innerHTML='<div class="empty">模板载入失败：'+esc(e.message)+'</div>'});window.addEventListener("resize",function(){if(lastData)render(lastData);else drawChart()});
+
+  var stage = document.getElementById("monitor-stage");
+  var dashboard = document.getElementById("dashboard");
+  var lastData = null;
+  var slots = [
+    { label: "UB", aliases: ["ub", "ubuntu"], third: "gpu", thirdLabel: "GPU" },
+    { label: "Mac", aliases: ["mac", "macbook"], third: "gpu", thirdLabel: "GPU" },
+    { label: "NAS", aliases: ["nas", "synology"], third: "temperature", thirdLabel: "温度" },
+    { label: "PVE", aliases: ["pve", "proxmox"], third: "temperature", thirdLabel: "温度" }
+  ];
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (character) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[character];
+    });
+  }
+
+  function clamp(value) { return Math.max(0, Math.min(100, Number(value) || 0)); }
+  function percent(value) { return value == null ? "--" : Math.round(Number(value)) + "%"; }
+  function temperature(value) { return value == null ? "--" : Math.round(Number(value)) + "°C"; }
+
+  function formatRate(value) {
+    value = Number(value) || 0;
+    if (value >= 1000000000) return (value / 1000000000).toFixed(2) + " Gbps";
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + " Mbps";
+    if (value >= 1000) return (value / 1000).toFixed(0) + " Kbps";
+    return Math.round(value) + " bps";
+  }
+
+  function formatUptime(seconds) {
+    if (!seconds) return "无运行时间数据";
+    var days = Math.floor(seconds / 86400);
+    var hours = Math.floor((seconds % 86400) / 3600);
+    return "已运行 " + (days ? days + " 天 " : "") + hours + " 小时";
+  }
+
+  function fitStage() {
+    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+  }
+
+  function findSystem(slot, systems, used) {
+    var exact = systems.find(function (system) {
+      return !used[system.id] && system.name.toLowerCase() === slot.label.toLowerCase();
+    });
+    if (exact) return exact;
+    return systems.find(function (system) {
+      var name = system.name.toLowerCase();
+      return !used[system.id] && slot.aliases.some(function (alias) { return name.indexOf(alias) !== -1; });
+    });
+  }
+
+  function metric(label, value, ringValue, accent, unitClass) {
+    return '<div class="device-metric">' +
+      '<div class="metric-ring" style="--metric-value:' + clamp(ringValue) + ';--metric-accent:' + accent + '">' +
+        '<div class="metric-core"><strong class="' + (unitClass || "") + '">' + escapeHtml(value) + '</strong></div>' +
+      '</div><span>' + escapeHtml(label) + '</span></div>';
+  }
+
+  function deviceCard(slot, system, position) {
+    var online = system && system.status === "up";
+    var thirdValue = system ? system[slot.third] : null;
+    var thirdText = slot.third === "temperature" ? temperature(thirdValue) : percent(thirdValue);
+    var thirdRing = slot.third === "temperature" ? clamp(thirdValue) : thirdValue;
+    return '<article class="device-panel device-' + position + '">' +
+      '<header class="device-header"><div><div class="device-label">' + escapeHtml(slot.label) + '</div>' +
+      '<div class="device-detail">' + escapeHtml(system ? system.name + " · " + formatUptime(system.uptime_seconds) : "未匹配到 Beszel 设备") + '</div></div>' +
+      '<div class="device-state ' + (online ? "online" : "offline") + '"><i></i>' + (online ? "在线" : "离线") + '</div></header>' +
+      '<div class="metric-row">' +
+        metric("CPU", percent(system && system.cpu), system && system.cpu, "#36d7ff") +
+        metric("内存", percent(system && system.memory), system && system.memory, "#8a7dff") +
+        metric(slot.thirdLabel, thirdText, thirdRing, slot.third === "gpu" ? "#ffbd5c" : "#45e0a8", slot.third === "temperature" ? "temperature-value" : "") +
+      '</div></article>';
+  }
+
+  function networkTable(orderedSystems, connectionState) {
+    var rows = orderedSystems.map(function (system) {
+      var online = system.status === "up";
+      return '<tr><td><div class="table-device"><i class="table-dot ' + (online ? "online" : "") + '"></i>' +
+        '<strong>' + escapeHtml(system.displayLabel || system.name) + '</strong><span>' + escapeHtml(system.name) + '</span></div></td>' +
+        '<td class="rate download">' + formatRate(system.network_down_bps) + '</td>' +
+        '<td class="rate upload">' + formatRate(system.network_up_bps) + '</td></tr>';
+    }).join("");
+    return '<section class="network-panel"><div class="network-heading"><div><strong>设备网络吞吐</strong><span>Beszel 最近一分钟采样</span></div>' +
+      '<div class="stream-state ' + connectionState + '"><i></i><span>' + (connectionState === "live" ? "数据流已连接" : "正在连接") + '</span></div></div>' +
+      '<table><thead><tr><th>设备</th><th>↓ 下行速度</th><th>↑ 上行速度</th></tr></thead><tbody>' + rows + '</tbody></table></section>';
+  }
+
+  function render(data, connectionState) {
+    lastData = data;
+    var systems = (data.beszel && data.beszel.systems) || [];
+    var used = {};
+    var matched = slots.map(function (slot) {
+      var system = findSystem(slot, systems, used);
+      if (system) used[system.id] = true;
+      return system || null;
+    });
+    var tableSystems = matched.map(function (system, index) {
+      var result = system || { id: "missing-" + index, name: "未找到", status: "down", network_down_bps: 0, network_up_bps: 0 };
+      return Object.assign({}, result, { displayLabel: slots[index].label });
+    });
+    systems.forEach(function (system) { if (!used[system.id]) tableSystems.push(system); });
+    dashboard.innerHTML = deviceCard(slots[0], matched[0], 1) + deviceCard(slots[1], matched[1], 2) +
+      deviceCard(slots[2], matched[2], 3) + deviceCard(slots[3], matched[3], 4) +
+      networkTable(tableSystems, connectionState || "waiting");
+  }
+
+  function connect() {
+    var events = new EventSource("/api/events");
+    events.onopen = function () { if (lastData) render(lastData, "live"); };
+    events.onmessage = function (event) {
+      try { render(JSON.parse(event.data), "live"); } catch (error) { console.error(error); }
+    };
+    events.onerror = function () { if (lastData) render(lastData, "waiting"); };
+  }
+
+  fitStage();
+  render({ beszel: { systems: [] } }, "waiting");
+  connect();
+  window.addEventListener("resize", fitStage);
 })();
